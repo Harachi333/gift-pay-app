@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#102b68">
+<title>Gift Pay</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--panel:#102448;--blue:#215be8;--blue2:#3a74ff;--text:#f5f8ff;--muted:#a8badb;--line:#24416e;--ok:#1fbf75;--warn:#ffb020;--err:#ff4d5e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:linear-gradient(180deg,#102b68,#07152d 48%);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;padding-bottom:80px}
+header{padding:24px 18px 18px;background:#12377f;border-radius:0 0 26px 26px;box-shadow:0 8px 24px #0004}
+.balance{padding:16px;border:1px solid #7095ff66;background:#ffffff12;border-radius:18px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.balance small{color:#d2e1ff;font-size:12px}
+.profile-box{display:flex;align-items:center;gap:10px;flex:1}
+.profile-pic{width:48px;height:48px;border-radius:50%;border:2px solid #3a74ff88;object-fit:cover;background:#1e3a6f;flex-shrink:0}
+.user-info{display:flex;flex-direction:column;gap:4px;min-width:0}
+.user-name{font-size:14px;font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.amount{font-size:13px;font-weight:800;display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border:1.5px solid #3a74ff66;border-radius:999px;background:#3a74ff1a;width:fit-content}
+.usd-box{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border:1.5px solid #1fbf7566;border-radius:999px;background:#1fbf751a;font-size:12px;font-weight:800;color:#ffffff;margin-top:14px}
+main{padding:18px;max-width:650px;margin:auto}
+#home{padding-top:50px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.tile{border:1px solid var(--line);background:linear-gradient(145deg,#132d56,#0d1f3b);border-radius:17px;min-height:95px;padding:15px 12px;color:var(--text);text-align:right;font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}
+.tile:active{transform:scale(.97);border-color:var(--blue2)}
+.tile .svg-icon{width:28px;height:28px;margin-bottom:8px;color:#fff}
+.tile b{font-size:14px;font-weight:600}
+.wide{grid-column:1/-1}
+.panel{margin-top:18px;background:#0d2040;border:1px solid var(--line);border-radius:18px;padding:16px}
+.muted{color:var(--muted);font-size:13px;line-height:1.8}
+.max-label{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);margin-top:6px}
+.max-btn{background:#3a74ff22;border:1px solid #3a74ff66;color:#c9d9ff;border-radius:8px;padding:4px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s}
+.max-btn:active{background:#3a74ff44}
+button.primary{border:0;border-radius:12px;background:var(--blue);color:white;font-weight:700;padding:12px 16px;width:100%;margin-top:10px;font:inherit;font-size:15px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+button.primary:active{background:var(--blue2)}
+button.primary:disabled{opacity:.5;cursor:not-allowed}
+button.green{background:#1fbf75}
+button.green:active{background:#25d685}
+button.purple{background:#7c3aed}
+button.purple:active{background:#8b4bf7}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;gap:8px;padding:12px;background:#07152df2;border-top:1px solid #24416e;backdrop-filter:blur(8px);z-index:50}
+nav button{flex:1;background:#102448;border:1px solid var(--line);color:#fff;border-radius:12px;padding:11px;font:inherit;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;gap:5px}
+nav button.active{background:var(--blue);border-color:var(--blue)}
+.view{display:none}
+.view.active{display:block;animation:jiggle .5s ease-out}
+@keyframes jiggle{
+  0%{opacity:0;transform:translateY(10px) rotate(-0.8deg)}
+  20%{opacity:1;transform:translateY(0) rotate(0.6deg)}
+  40%{transform:translateX(-3px) rotate(-0.4deg)}
+  60%{transform:translateX(3px) rotate(0.3deg)}
+  80%{transform:translateX(-1px) rotate(-0.15deg)}
+  100%{transform:translateX(0) rotate(0)}
+}
+h3{margin:6px 0 14px;display:flex;align-items:center;gap:8px}
+.item{background:#102448;border:1px solid var(--line);border-radius:12px;padding:13px;margin:9px 0;font-size:14px}
+.item .row{display:flex;justify-content:space-between;margin:4px 0;gap:8px;align-items:center}
+input[type=number],input[type=text]{width:100%;margin-top:8px;padding:12px;border-radius:10px;border:1px solid var(--line);background:#07152d;color:#fff;font:inherit;font-size:15px}
+input:focus{outline:none;border-color:var(--blue2)}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#102448;border:1px solid var(--line);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:all .3s;z-index:100;box-shadow:0 8px 24px #0008;max-width:90%;text-align:center;white-space:pre-line;line-height:1.6}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--ok)}
+.toast.err{border-color:var(--err)}
+.toast.warn{border-color:var(--warn)}
+.badge{display:inline-block;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:700}
+.badge.ok{background:#1fbf7522;color:#1fbf75;border:1px solid #1fbf7544}
+.badge.warn{background:#ffb02022;color:#ffb020;border:1px solid #ffb02044}
+.svg-icon{width:20px;height:20px;display:inline-block;flex-shrink:0;vertical-align:middle}
+.svg-icon svg{width:100%;height:100%;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.task-item{background:#102448;border:1px solid var(--line);border-radius:12px;padding:13px;margin:9px 0}
+.task-item .task-name{font-size:14px;font-weight:600;margin-bottom:4px}
+.task-item .task-reward{font-size:13px;color:var(--warn);margin-bottom:10px}
+.wheel-container{position:relative;width:230px;height:230px;margin:22px auto 10px}
+.wheel{width:100%;height:100%;border-radius:50%;border:6px solid #24416e;position:relative;overflow:hidden;transition:transform 4s cubic-bezier(.17,.67,.16,1);background:radial-gradient(circle at 50% 30%,#123a7a,#0a1f4a 70%);box-shadow:0 0 0 4px #102448,0 10px 30px #0006,inset 0 0 40px #3a74ff22;z-index:1}
+.wheel-seg{position:absolute;top:0;left:50%;width:2px;height:50%;background:#3a74ff88;transform-origin:bottom center;z-index:2}
+.wheel-label{position:absolute;top:0;left:50%;width:80px;height:50%;transform-origin:bottom center;z-index:3;pointer-events:none}
+.wheel-label span{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:14px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000;white-space:nowrap}
+.wheel-pointer{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:32px;z-index:10;filter:drop-shadow(0 3px 5px #000);color:#ffb020}
+.wheel-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:#102448;border:3px solid #24416e;display:flex;align-items:center;justify-content:center;font-size:28px;z-index:5;box-shadow:0 0 0 4px #07152d,0 0 20px #3a74ff66}
+.wheel-result{text-align:center;font-size:22px;font-weight:800;margin:14px 0;min-height:32px}
+.wheel-result.win{color:#1fbf75;animation:pop .5s}
+@keyframes pop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.rank-item{background:#102448;border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin:7px 0;display:flex;align-items:center;gap:10px;transition:transform .15s}
+.rank-item:active{transform:scale(.98)}
+.rank-item.top1{background:linear-gradient(135deg,#ffd70033,#b8860b22);border-color:#ffd70066}
+.rank-item.top2{background:linear-gradient(135deg,#c0c0c033,#80808022);border-color:#c0c0c066}
+.rank-item.top3{background:linear-gradient(135deg,#cd7f3233,#8b451322);border-color:#cd7f3266}
+.rank-num{width:32px;height:32px;border-radius:50%;background:#1e3a6f;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+.rank-num.top1{background:linear-gradient(135deg,#ffd700,#b8860b);color:#000}
+.rank-num.top2{background:linear-gradient(135deg,#e0e0e0,#a0a0a0);color:#000}
+.rank-num.top3{background:linear-gradient(135deg,#e09c5c,#8b4513);color:#fff}
+.rank-name{flex:1;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-refs{font-size:11px;color:var(--muted);margin-top:2px}
+.rank-prize{font-size:13px;font-weight:800;color:#ffd700;white-space:nowrap}
+.prize-legend{background:#0d2040;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
+.prize-legend .legend-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;border-bottom:1px dashed #24416e}
+.prize-legend .legend-row:last-child{border-bottom:none}
+</style>
+</head><body>
+
+<header>
+  <div class="balance">
+    <div class="profile-box">
+      <img id="userAvatar" class="profile-pic" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><circle cx='24' cy='24' r='24' fill='%231e3a6f'/><circle cx='24' cy='18' r='8' fill='%233a74ff'/><path d='M8 44 Q8 30 24 30 Q40 30 40 44 Z' fill='%233a74ff'/></svg>" alt="avatar">
+      <div class="user-info">
+        <div class="user-name" id="userName">مستخدم</div>
+        <div class="amount">🪙 <span id="balance">0</span></div>
+      </div>
+    </div>
+    <div style="text-align:left">
+      <div style="font-size:11px;color:#a8badb;margin-bottom:-8px">🪙10000=$1</div>
+      <div class="usd-box" dir="ltr">$<span id="headerUsd">0.000</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="home" class="view active">
+    <div class="grid">
+      <button class="tile" onclick="openView('daily')" style="background:linear-gradient(145deg,#06b6d4,#0e7490);border-color:#22d3ee">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="1"/><path d="M3 12 L21 12"/><path d="M12 8 L12 20"/><path d="M12 8 Q8 8 8 5 Q8 3 10 3 Q12 3 12 8"/><path d="M12 8 Q16 8 16 5 Q16 3 14 3 Q12 3 12 8"/></svg></span>
+        <b>هدية يومية</b>
+      </button>
+      <button class="tile" onclick="openView('taskslist')" style="background:linear-gradient(145deg,#10b981,#047857);border-color:#34d399">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M9 11 L12 14 L22 4"/><path d="M21 12 L21 19 Q21 21 19 21 L5 21 Q3 21 3 19 L3 5 Q3 3 5 3 L16 3"/></svg></span>
+        <b>المهام</b>
+      </button>
+      <button class="tile" onclick="openView('usecode')" style="background:linear-gradient(145deg,#f59e0b,#b45309);border-color:#fbbf24">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10 L7 14"/><path d="M10 10 L10 14"/><path d="M13 10 L13 14"/><path d="M16 10 L16 14"/></svg></span>
+        <b>استخدم كود</b>
+      </button>
+      <button class="tile" onclick="openView('wheel')" style="background:linear-gradient(145deg,#8b5cf6,#5b21b6);border-color:#a78bfa">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3 L12 12 L19.5 7.5"/><path d="M12 12 L4.5 7.5"/><path d="M12 12 L19.5 16.5"/><path d="M12 12 L4.5 16.5"/><path d="M12 12 L12 21"/></svg></span>
+        <b>عجلة الحظ</b>
+      </button>
+      <button class="tile" onclick="openView('watchad')" style="background:linear-gradient(145deg,#ec4899,#9d174d);border-color:#f9a8d4">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M10 9 L15 12 L10 15 Z" fill="currentColor"/><path d="M8 22 L16 22"/></svg></span>
+        <b>مشاهدة إعلان +10</b>
+      </button>
+      <button class="tile" onclick="openView('orders')" style="background:linear-gradient(145deg,#334155,#1e293b);border-color:#64748b">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M6 3 L18 3 L18 21 L12 17 L6 21 Z"/><path d="M9 8 L15 8"/><path d="M9 12 L15 12"/></svg></span>
+        <b>طلبات سحب</b>
+      </button>
+      <button class="tile wide" onclick="openView('contest')" style="background:linear-gradient(145deg,#ef4444,#991b1b);border-color:#f87171">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M8 21 L16 21"/><path d="M12 17 L12 21"/><path d="M7 4 L17 4 L17 10 Q17 15 12 15 Q7 15 7 10 Z"/><path d="M17 6 L21 6 L21 9 Q21 12 17 12"/><path d="M7 6 L3 6 L3 9 Q3 12 7 12"/></svg></span>
+        <b>مسابقة الإحالة الأسبوعية</b>
+      </button>
+    </div>
+  </section>
+
+  <section id="watchad" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M10 9 L15 12 L10 15 Z" fill="currentColor"/><path d="M8 22 L16 22"/></svg></span> مشاهدة إعلان</h3>
+    <div class="panel">
+      <p class="muted" style="text-align:center">شاهد إعلان واحصل على <b>🪙 10</b> فورية</p>
+      <div class="item" style="text-align:center">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">الإعلانات المتبقية اليوم</div>
+        <div id="adsRemaining" style="font-size:24px;font-weight:800;color:#f9a8d4">5 / 5</div>
+      </div>
+      <div id="adTimer" style="text-align:center;margin:10px 0;font-size:14px;color:var(--muted)"></div>
+      <button class="primary" id="watchAdBtn" onclick="watchAd()" style="background:#ec4899">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M10 9 L15 12 L10 15 Z" fill="currentColor"/></svg></span>
+        مشاهدة الآن
+      </button>
+      <p id="adMessage" class="muted" style="text-align:center"></p>
+    </div>
+  </section>
+
+  <section id="contest" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M8 21 L16 21"/><path d="M12 17 L12 21"/><path d="M7 4 L17 4 L17 10 Q17 15 12 15 Q7 15 7 10 Z"/><path d="M17 6 L21 6 L21 9 Q21 12 17 12"/><path d="M7 6 L3 6 L3 9 Q3 12 7 12"/></svg></span> مسابقة الإحالة الأسبوعية</h3>
+    <div class="panel">
+      <p class="muted" style="text-align:center;margin-bottom:14px">🏆 أفضل 20 شخص لديهم أكثر الإحالات هذا الأسبوع!</p>
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:11px;color:#a8badb;margin-bottom:6px">ينتهي خلال</div>
+        <div id="contestTimer" style="display:inline-flex;gap:6px;font-weight:800"></div>
+      </div>
+      <div class="prize-legend">
+        <div class="legend-row"><span>🥇 المركز الأول</span><b style="color:#ffd700">$5</b></div>
+        <div class="legend-row"><span>🥈 المركز الثاني</span><b style="color:#c0c0c0">$3</b></div>
+        <div class="legend-row"><span>🥉 المركز الثالث</span><b style="color:#cd7f32">$2</b></div>
+        <div class="legend-row"><span>المركز الرابع</span><b style="color:#1fbf75">$1</b></div>
+        <div class="legend-row"><span>المركز الخامس</span><b style="color:#1fbf75">$1</b></div>
+        <div class="legend-row"><span>المركز 6 إلى 20</span><b style="color:#a8badb">$0.20</b></div>
+      </div>
+      <div id="contestList"></div>
+    </div>
+  </section>
+
+  <section id="usecode" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10 L7 14"/><path d="M10 10 L10 14"/><path d="M13 10 L13 14"/><path d="M16 10 L16 14"/></svg></span> استخدم كود</h3>
+    <div class="panel">
+      <p class="muted">أدخل الكود واحصل على مكافأة 🪙 فورية.</p>
+      <label for="codeInput" style="font-size:13px;color:var(--muted);display:block;margin-top:8px">الكود:</label>
+      <input id="codeInput" type="text" placeholder="اكتب الكود هنا">
+      <button class="primary" onclick="useCode()" style="background:#f59e0b">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M9 11 L12 14 L22 4"/><path d="M21 12 L21 19 Q21 21 19 21 L5 21 Q3 21 3 19 L3 5 Q3 3 5 3 L16 3"/></svg></span>
+        تفعيل الكود
+      </button>
+      <p id="codeMessage" class="muted"></p>
+    </div>
+  </section>
+
+  <section id="taskslist" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M9 11 L12 14 L22 4"/><path d="M21 12 L21 19 Q21 21 19 21 L5 21 Q3 21 3 19 L3 5 Q3 3 5 3 L16 3"/></svg></span> المهام</h3>
+    <div class="panel">
+      <p class="muted">أكمل المهام واحصل على مكافآت 🪙</p>
+      <div id="tasksListContainer"></div>
+    </div>
+  </section>
+
+  <section id="referrals" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M10 13 Q10 6 17 6 Q22 6 22 10 Q22 14 17 14 L14 14 L11 17 L11 14"/></svg></span> دعوة صديق</h3>
+    <div class="panel">
+      <p class="muted">شارك رابطك واربح 🪙 50 على كل صديق.</p>
+      <div class="item">
+        <div class="row"><span>عدد الإحالات:</span><b id="refCount">0</b></div>
+        <div class="row"><span>الأرباح:</span><b>🪙 <span id="refEarned">0</span></b></div>
+      </div>
+      <label style="font-size:13px;color:var(--muted);display:block;margin-top:10px">رابط الدعوة:</label>
+      <input id="refLink" type="text" readonly>
+      <button class="primary" onclick="copyRef()">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="8" y="3" width="13" height="16" rx="2"/><path d="M4 7 L4 20 Q4 21 5 21 L16 21"/></svg></span>
+        نسخ الرابط
+      </button>
+      <button class="primary green" onclick="shareRef()">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M12 3 L12 15"/><path d="M7 8 L12 3 L17 8"/><path d="M5 15 L5 20 L19 20 L19 15"/></svg></span>
+        مشاركة
+      </button>
+    </div>
+  </section>
+
+  <section id="daily" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="1"/><path d="M3 12 L21 12"/><path d="M12 8 L12 20"/><path d="M12 8 Q8 8 8 5 Q8 3 10 3 Q12 3 12 8"/><path d="M12 8 Q16 8 16 5 Q16 3 14 3 Q12 3 12 8"/></svg></span> هدية يومية</h3>
+    <div class="panel">
+      <p id="dailyStatus" class="muted">استلم 🪙 50 مجانًا كل 24 ساعة.</p>
+      <button class="primary" id="dailyBtn" onclick="claimDaily()">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="1"/><path d="M3 12 L21 12"/><path d="M12 8 L12 20"/><path d="M12 8 Q8 8 8 5 Q8 3 10 3 Q12 3 12 8"/><path d="M12 8 Q16 8 16 5 Q16 3 14 3 Q12 3 12 8"/></svg></span>
+        استلام الهدية
+      </button>
+    </div>
+  </section>
+
+  <section id="tasks" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20 Q3 14 9 14 Q15 14 15 20"/><path d="M15 20 Q15 15 19.5 15 Q22 15 22 18"/></svg></span> أصدقاء</h3>
+    <div class="panel">
+      <p class="muted">كل صديق تدعوه = <b>🪙 50</b> مكافأة فورية</p>
+      <div class="item">
+        <div class="row muted" style="font-size:13px"><span>دعوة صديق</span><b style="font-size:13px;font-weight:600">🪙 50</b></div>
+        <button class="primary" onclick="openView('referrals')">اذهب للدعوة</button>
+      </div>
+      <div class="item">
+        <div class="row muted" style="font-size:13px"><span>إحالاتك الحالية</span><b style="font-size:13px;font-weight:600"><span id="taskRefCount">0</span> صديق</b></div>
+        <div class="row muted" style="font-size:13px"><span>مكافآتك من الدعوات</span><b style="font-size:13px;font-weight:600">🪙 <span id="taskRefEarned">0</span></b></div>
+        <button class="primary green" id="claimRefBtn" onclick="claimReferralRewards()">
+          <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M12 2 L12 6"/><path d="M12 18 L12 22"/><circle cx="12" cy="12" r="6"/><path d="M12 9 L12 15"/><path d="M9 12 L15 12"/></svg></span>
+          مطالبة
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section id="exchange" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M4 8 L18 8"/><path d="M14 4 L18 8 L14 12"/><path d="M20 16 L6 16"/><path d="M10 20 L6 16 L10 12"/></svg></span> تبديل 🪙 إلى USDT</h3>
+    <div class="panel">
+      <p class="muted">الحد الأدنى تبديل: <b>🪙 100</b></p>
+      <p class="muted">الحد الأقصى في اليوم: <b>🪙 50000</b></p>
+      <div class="max-label">
+        <span></span>
+        <button class="max-btn" onclick="fillMax()">الكل</button>
+      </div>
+      <input id="exchangeAmount" type="number" min="100" step="1" placeholder="اكتب عدد العملات" oninput="calcExchange()">
+      <div class="item" style="text-align:center;font-size:15px">ستحصل على: <b style="color:#ffffff"><span id="usdtResult">0.000</span>$</b></div>
+      <button class="primary" onclick="doExchange()" style="background:#215be8">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M4 8 L18 8"/><path d="M14 4 L18 8 L14 12"/><path d="M20 16 L6 16"/><path d="M10 20 L6 16 L10 12"/></svg></span>
+        تبديل
+      </button>
+      <p id="exchangeMessage" class="muted"></p>
+    </div>
+  </section>
+
+  <section id="withdraw" class="view">
+    <h3>
+      <span class="svg-icon"><svg viewBox="0 0 64 64"><path d="M8 22 L8 50 Q8 56 14 56 L50 56 Q58 56 58 48 L58 40 L52 40 Q46 40 46 36 Q46 32 52 32 L58 32 L58 24 Q58 16 50 16 L28 16"/><path d="M8 22 L28 16"/><path d="M28 16 L26 6 L34 8 L42 4 L46 10 L52 8 L52 16"/><path d="M14 22 L14 56"/><path d="M16 48 L44 48"/></svg></span>
+      محفظة
+    </h3>
+    <div class="panel">
+      <p class="muted">الحد الأدنى للسحب: <b>1.00$</b></p>
+      <label for="withdrawAmount" style="font-size:13px;color:var(--muted);display:block;margin-top:10px">المبلغ المراد سحبه ($)</label>
+      <input id="withdrawAmount" type="number" min="1" step="0.01" placeholder="اكتب مبلغ السحب" oninput="calcWithdraw()">
+      <label for="tonAddress" style="font-size:13px;color:var(--muted);display:block;margin-top:6px">عنوان محفظة TON:</label>
+      <input id="tonAddress" type="text" placeholder="UQ... أو EQ...">
+      <button class="primary green" onclick="doWithdraw()">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M12 3 L12 15"/><path d="M7 10 L12 15 L17 10"/><path d="M5 19 L19 19"/></svg></span>
+        سحب
+      </button>
+      <p id="withdrawMessage" class="muted"></p>
+    </div>
+  </section>
+
+  <section id="wheel" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3 L12 12 L19.5 7.5"/><path d="M12 12 L4.5 7.5"/><path d="M12 12 L19.5 16.5"/><path d="M12 12 L4.5 16.5"/><path d="M12 12 L12 21"/></svg></span> عجلة الحظ</h3>
+    <div class="panel" style="text-align:center">
+      <p id="wheelStatus" class="muted">جرّب حظك مرة كل 24 ساعة!</p>
+      <div class="wheel-container">
+        <div class="wheel-pointer">▼</div>
+        <div class="wheel" id="wheelEl"></div>
+        <div class="wheel-center">🪙</div>
+      </div>
+      <div class="wheel-result" id="wheelResult"></div>
+      <button class="primary purple" id="wheelBtn" onclick="spinWheel()">
+        <span class="svg-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3 L12 12 L19.5 7.5"/><path d="M12 12 L4.5 7.5"/><path d="M12 12 L19.5 16.5"/><path d="M12 12 L4.5 16.5"/><path d="M12 12 L12 21"/></svg></span>
+        ابدأ الدوران
+      </button>
+    </div>
+  </section>
+
+  <section id="orders" class="view">
+    <h3><span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M6 3 L18 3 L18 21 L12 17 L6 21 Z"/><path d="M9 8 L15 8"/><path d="M9 12 L15 12"/></svg></span> طلبات سحب</h3>
+    <div id="ordersList" class="panel"><p class="muted">لا توجد طلبات بعد.</p></div>
+  </section>
+</main>
+
+<nav>
+  <button id="navHome" class="active" onclick="openView('home')">
+    <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M3 11 L12 3 L21 11"/><path d="M5 10 L5 20 L10 20 L10 14 L14 14 L14 20 L19 20 L19 10"/></svg></span>
+    الرئيسية
+  </button>
+  <button id="navTasks" onclick="openView('tasks')">
+    <span class="svg-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20 Q3 14 9 14 Q15 14 15 20"/><path d="M15 20 Q15 15 19.5 15 Q22 15 22 18"/></svg></span>
+    أصدقاء
+  </button>
+  <button id="navExchange" onclick="openView('exchange')">
+    <span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M4 8 L18 8"/><path d="M14 4 L18 8 L14 12"/><path d="M20 16 L6 16"/><path d="M10 20 L6 16 L10 12"/></svg></span>
+    تبديل
+  </button>
+  <button id="navWithdraw" onclick="openView('withdraw')">
+    <span class="svg-icon"><svg viewBox="0 0 64 64"><path d="M8 22 L8 50 Q8 56 14 56 L50 56 Q58 56 58 48 L58 40 L52 40 Q46 40 46 36 Q46 32 52 32 L58 32 L58 24 Q58 16 50 16 L28 16"/><path d="M8 22 L28 16"/><path d="M28 16 L26 6 L34 8 L42 4 L46 10 L52 8 L52 16"/><path d="M14 22 L14 56"/><path d="M16 48 L44 48"/></svg></span>
+    محفظة
+  </button>
+</nav>
+
+<div id="toast" class="toast"></div><script>
+const CONFIG={
+  BOT_USERNAME:"atYourService1_bot",
+  DAILY_REWARD:50,
+  REFERRAL_REWARD:50,
+  RATE:10000,
+  MIN_WITHDRAW_USD:1,
+  MIN_EXCHANGE:100,
+  MAX_EXCHANGE:50000,
+  AD_REWARD:10,
+  AD_MAX_PER_DAY:5,
+  AD_COOLDOWN:30,
+  TASKS:[
+    {id:"task1", name:"اشترك في قناة الرسمية", reward:50, url:"https://t.me/YourChannel"},
+    {id:"task2", name:"تسجيل في البوت", reward:30, url:"https://t.me/PartnerChannel"},
+    {id:"task3", name:"تسجيل في البوت", reward:30, url:"https://t.me/SupportGroup"}
+  ],
+  CODES:{
+    "WELCOME":{reward:5000,  used:false},
+    "BONUS100":{reward:1000, used:false},
+    "GIFT2024":{reward:2000, used:false},
+    "VIP500":{reward:5000,  used:false},
+    "START":{reward:500,    used:false}
+  },
+  WHEEL_PRIZES:[
+    {amount:100,chance:4},
+    {amount:80, chance:6},
+    {amount:60, chance:15},
+    {amount:40, chance:30},
+    {amount:20, chance:45}
+  ],
+  CONTEST_PRIZES:[5,3,2,1,1,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2],
+  CONTEST_USERS:[
+    {name:"Ahmed Ali",refs:342},{name:"Sara M",refs:298},{name:"Mohamed K",refs:265},
+    {name:"Fatima Z",refs:241},{name:"Youssef B",refs:220},{name:"Layla H",refs:198},
+    {name:"Omar S",refs:175},{name:"Nour A",refs:162},{name:"Karim T",refs:148},
+    {name:"Amira R",refs:135},{name:"Hassan M",refs:120},{name:"Rania K",refs:112},
+    {name:"Ali B",refs:105},{name:"Mona S",refs:98},{name:"Tariq N",refs:87},
+    {name:"Salma F",refs:76},{name:"Bilal A",refs:65},{name:"Dina M",refs:54},
+    {name:"Zaid H",refs:43},{name:"Huda R",refs:32}
+  ]
+};
+const COIN="🪙";
+const tg=window.Telegram?.WebApp;
+let USER_ID="guest";
+let USER_NAME="مستخدم";
+let USER_PHOTO="";
+if(tg){
+  tg.ready();tg.expand();
+  tg.setHeaderColor?.("#12377f");
+  tg.setBackgroundColor?.("#07152d");
+  const u=tg.initDataUnsafe?.user;
+  if(u){
+    USER_ID=String(u.id||"guest");
+    USER_NAME=[u.first_name,u.last_name].filter(Boolean).join(" ")||u.username||"مستخدم";
+    USER_PHOTO=u.photo_url||"";
+  }
+}
+function applyUserInfo(){
+  const nameEl=document.getElementById("userName");
+  const avEl=document.getElementById("userAvatar");
+  if(nameEl)nameEl.textContent=USER_NAME;
+  if(avEl&&USER_PHOTO){avEl.src=USER_PHOTO;}
+}
+const KEY="app_data_v5_"+USER_ID;
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{balance:0,usdt:0,lastDaily:0,lastWheel:0,referrals:0,refEarned:0,refClaimable:0,orders:[],completedTasks:[],usedCodes:[],adsToday:0,lastAdDate:"",lastAdTime:0};}catch(e){return{balance:0,usdt:0,lastDaily:0,lastWheel:0,referrals:0,refEarned:0,refClaimable:0,orders:[],completedTasks:[],usedCodes:[],adsToday:0,lastAdDate:"",lastAdTime:0};}}
+function save(d){localStorage.setItem(KEY,JSON.stringify(d));}
+let DATA=load();
+if(DATA.refClaimable===undefined)DATA.refClaimable=0;
+if(DATA.usdt===undefined)DATA.usdt=0;
+if(!Array.isArray(DATA.completedTasks))DATA.completedTasks=[];
+if(!Array.isArray(DATA.usedCodes))DATA.usedCodes=[];
+if(DATA.adsToday===undefined)DATA.adsToday=0;
+if(DATA.lastAdDate===undefined)DATA.lastAdDate="";
+if(DATA.lastAdTime===undefined)DATA.lastAdTime=0;
+function getTodayStr(){const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+if(DATA.lastAdDate!==getTodayStr()){DATA.adsToday=0;DATA.lastAdDate=getTodayStr();save(DATA);}
+function toast(t,type){const el=document.getElementById("toast");el.textContent=t;el.className="toast show "+(type||"");clearTimeout(window._tt);window._tt=setTimeout(function(){el.className="toast "+(type||"");},3200);}
+function fmt(n){return Number(n).toLocaleString("en-US");}
+function coinsToUsd(c){return c/CONFIG.RATE;}
+function usdToCoins(u){return Math.round(u*CONFIG.RATE);}
+let audioCtx=null;
+function getCtx(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume();return audioCtx;}
+function beep(f,d,v,t){const c=getCtx();if(!c)return;const o=c.createOscillator(),g=c.createGain();o.type=t||"square";o.frequency.value=f;g.gain.setValueAtTime(v,c.currentTime);g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+d);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+d);}
+function playTick(){beep(1200,0.03,0.08,"square");}
+function playWin(){[523,659,784,1047].forEach(function(f,i){setTimeout(function(){beep(f,0.15,0.18,"triangle");},i*110);});}
+function playLose(){beep(200,0.25,0.15,"sawtooth");}
+function playNav(){beep(700,0.05,0.08,"sine");}
+function playWithdrawDone(){
+  beep(1000,0.08,0.12,"sine");
+  setTimeout(function(){beep(700,0.08,0.12,"sine");},80);
+  setTimeout(function(){beep(400,0.14,0.12,"sine");},160);
+}
+function playDailyGift(){
+  beep(659,0.08,0.10,"sine");
+  setTimeout(function(){beep(880,0.08,0.10,"sine");},80);
+  setTimeout(function(){beep(1109,0.08,0.10,"sine");},160);
+  setTimeout(function(){beep(1319,0.22,0.11,"sine");},240);
+}
+let spinTickTimer=null;
+function startSpinSound(ms){const s=performance.now();function t(){const e=performance.now()-s;if(e>=ms)return;playTick();const p=e/ms;const i=30+Math.pow(p,2)*260;spinTickTimer=setTimeout(t,i);}t();}
+function stopSpinSound(){if(spinTickTimer){clearTimeout(spinTickTimer);spinTickTimer=null;}}
+function clearInputsAndMsgs(){
+  const a=document.getElementById("exchangeAmount");if(a)a.value="";
+  const b=document.getElementById("withdrawAmount");if(b)b.value="";
+  const c=document.getElementById("tonAddress");if(c)c.value="";
+  const m1=document.getElementById("exchangeMessage");if(m1)m1.textContent="";
+  const m2=document.getElementById("withdrawMessage");if(m2)m2.textContent="";
+  const r=document.getElementById("usdtResult");if(r)r.textContent="0.000";
+  const cc=document.getElementById("codeInput");if(cc)cc.value="";
+  const cm=document.getElementById("codeMessage");if(cm)cm.textContent="";
+  const am=document.getElementById("adMessage");if(am)am.textContent="";
+}
+let currentView="home";
+function openView(id){
+  if(id!==currentView){playNav();currentView=id;}
+  document.querySelectorAll(".view").forEach(function(v){v.classList.remove("active");});
+  const el=document.getElementById(id);
+  if(el)el.classList.add("active");
+  window.scrollTo({top:0,behavior:"smooth"});
+  document.querySelectorAll("nav button").forEach(function(b){b.classList.remove("active");});
+  if(id==="home")document.getElementById("navHome").classList.add("active");
+  if(id==="tasks")document.getElementById("navTasks").classList.add("active");
+  if(id==="exchange")document.getElementById("navExchange").classList.add("active");
+  if(id==="withdraw")document.getElementById("navWithdraw").classList.add("active");
+  clearInputsAndMsgs();
+  if(id==="referrals")renderReferral();
+  if(id==="daily")renderDaily();
+  if(id==="orders")renderOrders();
+  if(id==="tasks")renderTasks();
+  if(id==="taskslist")renderTasksList();
+  if(id==="contest"){renderContest();updateContestTimer();}
+  if(id==="watchad"){renderAds();updateAdTimer();}
+  if(id==="exchange")calcExchange();
+  if(id==="withdraw")renderWithdraw();
+  if(id==="wheel")renderWheel();
+}
+function render(){
+  document.getElementById("balance").textContent=fmt(DATA.balance);
+  const usdEl=document.getElementById("headerUsd");
+  if(usdEl)usdEl.textContent=DATA.usdt.toFixed(3);
+  renderDaily();renderReferral();renderTasks();renderWithdraw();renderWheel();
+}
+function renderDaily(){
+  const btn=document.getElementById("dailyBtn"),st=document.getElementById("dailyStatus");
+  if(!btn||!st)return;
+  const cd=86400000,el=Date.now()-(DATA.lastDaily||0);
+  if(el<cd){const left=cd-el;const h=Math.floor(left/3600000),m=Math.floor((left%3600000)/60000);btn.disabled=true;btn.textContent="⏳ تم الاستلام اليوم";st.innerHTML="عد بعد <b>"+h+"س "+m+"د</b>";}
+  else{btn.disabled=false;btn.innerHTML='<span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="1"/><path d="M3 12 L21 12"/><path d="M12 8 L12 20"/><path d="M12 8 Q8 8 8 5 Q8 3 10 3 Q12 3 12 8"/><path d="M12 8 Q16 8 16 5 Q16 3 14 3 Q12 3 12 8"/></svg></span> استلام الهدية';st.textContent="احصل على "+COIN+" "+fmt(CONFIG.DAILY_REWARD)+" مجانًا الآن!";}
+}
+function claimDaily(){
+  if(Date.now()-(DATA.lastDaily||0)<86400000){playLose();return toast("⏳ استلمت اليوم","warn");}
+  DATA.balance+=CONFIG.DAILY_REWARD;DATA.lastDaily=Date.now();save(DATA);render();
+  playDailyGift();
+  toast("🎉 +"+COIN+" "+fmt(CONFIG.DAILY_REWARD),"ok");
+}
+function renderReferral(){
+  const link="https://t.me/"+CONFIG.BOT_USERNAME+"?start=ref_"+USER_ID;
+  const e1=document.getElementById("refLink"),e2=document.getElementById("refCount"),e3=document.getElementById("refEarned");
+  if(e1)e1.value=link;if(e2)e2.textContent=DATA.referrals;if(e3)e3.textContent=fmt(DATA.refEarned);
+}
+function copyRef(){
+  if(navigator.clipboard){navigator.clipboard.writeText(document.getElementById("refLink").value).then(function(){beep(900,0.08,0.15,"sine");toast("✅ تم النسخ","ok");}).catch(function(){toast("تعذر النسخ","err");});}
+}
+function shareRef(){
+  const u=document.getElementById("refLink").value;
+  const s="https://t.me/share/url?url="+encodeURIComponent(u)+"&text="+encodeURIComponent("انضم إلينا 🚀");
+  if(tg&&tg.openTelegramLink)tg.openTelegramLink(s);else window.open(s,"_blank");
+}
+function renderTasks(){
+  const e1=document.getElementById("taskRefCount"),e2=document.getElementById("taskRefEarned");
+  if(e1)e1.textContent=DATA.referrals;
+  if(e2)e2.textContent=fmt(DATA.refEarned);
+  const btn=document.getElementById("claimRefBtn");
+  if(btn){
+    if(DATA.refClaimable>0){btn.disabled=false;btn.innerHTML='<span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M12 2 L12 6"/><path d="M12 18 L12 22"/><circle cx="12" cy="12" r="6"/><path d="M12 9 L12 15"/><path d="M9 12 L15 12"/></svg></span> مطالبة ('+COIN+' '+fmt(DATA.refClaimable)+')';}
+    else{btn.disabled=true;btn.innerHTML='<span class="svg-icon"><svg viewBox="0 0 24 24"><path d="M12 2 L12 6"/><path d="M12 18 L12 22"/><circle cx="12" cy="12" r="6"/><path d="M12 9 L12 15"/><path d="M9 12 L15 12"/></svg></span> مطالبة';}
+  }
+}
+function claimReferralRewards(){
+  if(DATA.refClaimable<=0){playLose();return toast("لا توجد مكافآت للمطالبة","warn");}
+  const amount=DATA.refClaimable;
+  DATA.balance+=amount;
+  DATA.refClaimable=0;
+  save(DATA);render();playWin();
+  toast("🎉 +"+COIN+" "+fmt(amount)+" تم إضافتها لرصيدك","ok");
+}
+function renderTasksList(){
+  const container=document.getElementById("tasksListContainer");
+  if(!container)return;
+  if(!CONFIG.TASKS.length){container.innerHTML='<p class="muted">لا توجد مهام حالياً.</p>';return;}
+  container.innerHTML=CONFIG.TASKS.map(function(t){
+    const done=DATA.completedTasks.indexOf(t.id)!==-1;
+    return '<div class="task-item">'+
+      '<div class="task-name">'+t.name+'</div>'+
+      '<div class="task-reward">🎁 المكافأة: '+COIN+' '+fmt(t.reward)+'</div>'+
+      (done
+        ? '<button class="primary" disabled style="opacity:.6">مكتملة</button>'
+        : '<button class="primary green" onclick="startTask(\''+t.id+'\',\''+t.url+'\')">🔗 ابدأ المهمة</button>'+
+          '<button class="primary" style="margin-top:6px;background:#3a74ff22;border:1px solid #3a74ff66" onclick="verifyTask(\''+t.id+'\')">✔️ تحقق من الاشتراك</button>'
+      )+
+    '</div>';
+  }).join("");
+}
+function startTask(id,url){
+  playNav();
+  if(tg&&tg.openTelegramLink){tg.openTelegramLink(url);}
+  else{window.open(url,"_blank");}
+  setTimeout(function(){toast("ارجع واضغط تحقق من الاشتراك","warn");},1200);
+}
+function verifyTask(id){
+  const task=CONFIG.TASKS.find(function(t){return t.id===id;});
+  if(!task)return;
+  if(DATA.completedTasks.indexOf(id)!==-1){playLose();return toast("مكتملة مسبقاً","warn");}
+  DATA.completedTasks.push(id);
+  DATA.balance+=task.reward;
+  save(DATA);render();renderTasksList();playDailyGift();
+  toast("🎉 +"+COIN+" "+fmt(task.reward)+" مبروك!","ok");
+}
+function renderAds(){
+  const remaining=CONFIG.AD_MAX_PER_DAY-DATA.adsToday;
+  const remEl=document.getElementById("adsRemaining");
+  const btn=document.getElementById("watchAdBtn");
+  const msg=document.getElementById("adMessage");
+  if(remEl)remEl.textContent=Math.max(0,remaining)+" / "+CONFIG.AD_MAX_PER_DAY;
+  if(btn){
+    if(remaining<=0){btn.disabled=true;btn.innerHTML='🚫 لا يوجد إعلانات متبقية اليوم';if(msg)msg.textContent="عد غداً!";}
+    else{
+      const since=Math.floor((Date.now()-DATA.lastAdTime)/1000);
+      if(since<CONFIG.AD_COOLDOWN){btn.disabled=true;btn.innerHTML='⏳ انتظر '+(CONFIG.AD_COOLDOWN-since)+' ثانية';}
+      else{btn.disabled=false;btn.innerHTML='<span class="svg-icon"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M10 9 L15 12 L10 15 Z" fill="currentColor"/></svg></span> مشاهدة الآن';}
+    }
+  }
+}
+let adTickTimer=null;
+function updateAdTimer(){
+  if(adTickTimer)clearInterval(adTickTimer);
+  adTickTimer=setInterval(function(){
+    const el=document.getElementById("adTimer");
+    const btn=document.getElementById("watchAdBtn");
+    if(!el||!btn)return;
+    const remaining=CONFIG.AD_MAX_PER_DAY-DATA.adsToday;
+    if(remaining<=0){el.textContent="";if(btn.disabled)renderAds();return;}
+    const since=Math.floor((Date.now()-DATA.lastAdTime)/1000);
+    if(since<CONFIG.AD_COOLDOWN){
+      const left=CONFIG.AD_COOLDOWN-since;
+      el.textContent="⏱️ يمكنك المشاهدة بعد "+left+" ثانية";
+      btn.disabled=true;
+      btn.innerHTML='⏳ انتظر '+left+' ثانية';
+    } else {
+      el.textContent="";
+      if(btn.disabled)renderAds();
+    }
+  },1000);
+  renderAds();
+}
+function watchAd(){
+  const remaining=CONFIG.AD_MAX_PER_DAY-DATA.adsToday;
+  if(remaining<=0){playLose();return toast("🚫 لا يوجد إعلانات متبقية اليوم","warn");}
+  const since=Math.floor((Date.now()-DATA.lastAdTime)/1000);
+  if(since<CONFIG.AD_COOLDOWN){playLose();return toast("⏳ انتظر "+(CONFIG.AD_COOLDOWN-since)+" ثانية","warn");}
+  playDailyGift();
+  DATA.adsToday+=1;
+  DATA.lastAdTime=Date.now();
+  DATA.balance+=CONFIG.AD_REWARD;
+  save(DATA);render();
+  renderAds();
+  toast("🎉 +"+COIN+" "+CONFIG.AD_REWARD+" شكراً للمشاهدة!","ok");
+}
+function updateContestTimer(){
+  const el=document.getElementById("contestTimer");
+  if(!el)return;
+  const now=new Date();
+  const end=new Date(now);
+  const day=now.getDay();
+  const daysUntilSunday=(7-day)%7 || 7;
+  end.setDate(now.getDate()+daysUntilSunday);
+  end.setHours(0,0,0,0);
+  const diff=end-now;
+  const d=Math.floor(diff/(1000*60*60*24));
+  const h=Math.floor((diff%(1000*60*60*24))/(1000*60*60));
+  const m=Math.floor((diff%(1000*60*60))/(1000*60));
+  const s=Math.floor((diff%(1000*60))/1000);
+  const box=function(v,l){return '<div style="background:#102448;border:1px solid #dc2626;border-radius:8px;padding:6px 10px;min-width:44px"><div style="font-size:16px;color:#f87171">'+String(v).padStart(2,'0')+'</div><div style="font-size:9px;color:#a8badb;font-weight:400">'+l+'</div></div>';};
+  el.innerHTML=box(d,"يوم")+box(h,"ساعة")+box(m,"دقيقة")+box(s,"ثانية");
+}
+setInterval(updateContestTimer,1000);
+function renderContest(){
+  const container=document.getElementById("contestList");
+  if(!container)return;
+  const list=CONFIG.CONTEST_USERS.slice().sort(function(a,b){return b.refs-a.refs;}).slice(0,20);
+  if(!list.length){container.innerHTML='<p class="muted">لا توجد بيانات بعد.</p>';return;}
+  container.innerHTML=list.map(function(u,i){
+    const rank=i+1;
+    const prize=CONFIG.CONTEST_PRIZES[i]||0.2;
+    let cls="",numCls="";
+    if(rank===1){cls="top1";numCls="top1";}
+    else if(rank===2){cls="top2";numCls="top2";}
+    else if(rank===3){cls="top3";numCls="top3";}
+    return '<div class="rank-item '+cls+'">'+
+      '<div class="rank-num '+numCls+'">'+rank+'</div>'+
+      '<div class="rank-name">'+u.name+'<div class="rank-refs">'+fmt(u.refs)+' إحالة</div></div>'+
+      '<div class="rank-prize">$'+prize.toFixed(2)+'</div>'+
+    '</div>';
+  }).join("");
+}
+function useCode(){
+  const el=document.getElementById("codeInput"),msg=document.getElementById("codeMessage");
+  if(!el||!msg)return;
+  const code=el.value.trim().toUpperCase();
+  if(code===""){playLose();return msg.textContent="⚠️ اكتب الكود أولاً.";}
+  if(!CONFIG.CODES[code]){playLose();return msg.textContent="❌ الكود غير صحيح.";}
+  if(DATA.usedCodes.indexOf(code)!==-1){playLose();return msg.textContent="⚠️ استخدمت هذا الكود مسبقاً.";}
+  const reward=CONFIG.CODES[code].reward;
+  DATA.usedCodes.push(code);
+  DATA.balance+=reward;
+  save(DATA);render();playDailyGift();
+  msg.textContent="";
+  el.value="";
+  toast("🎉 +"+COIN+" "+fmt(reward)+" تم تفعيل الكود!","ok");
+}
+function calcExchange(){
+  const el=document.getElementById("exchangeAmount");
+  const res=document.getElementById("usdtResult");
+  if(!el||!res)return;
+  const raw=el.value.trim();
+  if(raw===""){res.textContent="0.000";return;}
+  const a=Number(raw);
+  if(!Number.isFinite(a)){res.textContent="0.000";return;}
+  res.textContent=coinsToUsd(a).toFixed(3);
+}
+function fillMax(){
+  const el=document.getElementById("exchangeAmount");
+  if(!el)return;
+  let maxCoins=Math.min(DATA.balance,CONFIG.MAX_EXCHANGE);
+  if(maxCoins<CONFIG.MIN_EXCHANGE){playLose();return toast("رصيدك غير كافٍ","warn");}
+  el.value=Math.floor(maxCoins);
+  calcExchange();
+  beep(900,0.05,0.12,"sine");
+}
+function doExchange(){
+  const el=document.getElementById("exchangeAmount"),msg=document.getElementById("exchangeMessage");
+  const raw=el.value.trim();
+  if(raw===""){playLose();return msg.textContent="❌ عدد العملات غير كافٍ";}
+  const a=Number(raw);
+  if(!Number.isFinite(a)){playLose();return msg.textContent="❌ عدد العملات غير كافٍ";}
+  if(a<CONFIG.MIN_EXCHANGE){playLose();return msg.textContent="❌ عدد العملات غير كافٍ";}
+  if(a>CONFIG.MAX_EXCHANGE){playLose();return msg.textContent="❌ الحد الأقصى في اليوم "+COIN+" "+fmt(CONFIG.MAX_EXCHANGE);}
+  if(a>DATA.balance){playLose();return msg.textContent="❌ عدد العملات غير كافٍ";}
+  const usd=coinsToUsd(a);
+  DATA.balance-=a;
+  DATA.usdt+=usd;
+  save(DATA);render();msg.textContent="";el.value="";const r=document.getElementById("usdtResult");if(r)r.textContent="0.000";
+  playWithdrawDone();
+  toast("✅ تم تبديل "+COIN+" "+fmt(a)+" = "+usd.toFixed(3)+"$","ok");
+}
+function renderWithdraw(){
+  const e1=document.getElementById("usdBalance"),e2=document.getElementById("coinBalance");
+  if(e1)e1.textContent=DATA.usdt.toFixed(3);
+  if(e2)e2.textContent=fmt(DATA.balance);
+}
+function calcWithdraw(){
+  const el=document.getElementById("withdrawAmount");
+  if(!el)return;
+  const raw=el.value.trim();
+  if(raw==="")return;
+  const u=Number(raw);
+  if(!Number.isFinite(u))return;
+}
+function doWithdraw(){
+  const el=document.getElementById("withdrawAmount");
+  const raw=el.value.trim();
+  const addr=document.getElementById("tonAddress").value.trim(),msg=document.getElementById("withdrawMessage");
+  if(raw===""){playLose();return msg.textContent="⚠️ اكتب المبلغ أولاً.";}
+  const u=Number(raw);
+  if(!Number.isFinite(u)||u<CONFIG.MIN_WITHDRAW_USD){playLose();return msg.textContent="⚠️ الحد الأدنى "+CONFIG.MIN_WITHDRAW_USD+"$";}
+  if(addr.length<10){playLose();return msg.textContent="⚠️ أدخل عنوان محفظة TON صحيح.";}
+  if(u>DATA.usdt){playLose();return msg.textContent="❌ رصيد USDT غير كافٍ.";}
+  DATA.usdt-=u;
+  DATA.orders.unshift({id:Date.now(),type:"withdraw",amount:usdToCoins(u),usd:u.toFixed(3),wallet:addr,status:"pending",date:new Date().toLocaleString("ar-EG")});
+  save(DATA);render();msg.textContent="";el.value="";document.getElementById("tonAddress").value="";
+  playWithdrawDone();
+  toast("تم تقديم طلب السحب بنجاح ✅\n⏳ مدة معالجة طلب السحب: 48 ساعة","ok");
+}
+const WHEEL_COOLDOWN=86400000;
+function pickWheelPrize(){
+  const r=Math.random()*100;let acc=0;
+  for(let i=0;i<CONFIG.WHEEL_PRIZES.length;i++){acc+=CONFIG.WHEEL_PRIZES[i].chance;if(r<acc)return CONFIG.WHEEL_PRIZES[i];}
+  return CONFIG.WHEEL_PRIZES[CONFIG.WHEEL_PRIZES.length-1];
+}
+function buildWheelLabels(){
+  const w=document.getElementById("wheelEl");
+  if(!w||w.dataset.built)return;
+  const n=CONFIG.WHEEL_PRIZES.length,seg=360/n;let h="";
+  for(let i=0;i<n;i++){
+    const rot=i*seg+seg/2;
+    h+='<div class="wheel-seg" style="transform:translateX(-50%) rotate('+(i*seg)+'deg)"></div>';
+    h+='<div class="wheel-label" style="transform:translateX(-50%) rotate('+rot+'deg)"><span>'+COIN+' '+CONFIG.WHEEL_PRIZES[i].amount+'</span></div>';
+  }
+  w.innerHTML=h;w.dataset.built="1";
+}
+function renderWheel(){
+  buildWheelLabels();
+  const btn=document.getElementById("wheelBtn"),st=document.getElementById("wheelStatus"),res=document.getElementById("wheelResult");
+  if(!btn||!st)return;
+  const el=Date.now()-(DATA.lastWheel||0);
+  if(el<WHEEL_COOLDOWN){const left=WHEEL_COOLDOWN-el;const h=Math.floor(left/3600000),m=Math.floor((left%3600000)/60000);btn.disabled=true;btn.textContent="⏳ عد لاحقًا";st.innerHTML="عد بعد <b>"+h+"س "+m+"د</b>";res.textContent="";res.className="wheel-result";}
+  else{btn.disabled=false;btn.innerHTML='<span class="svg-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3 L12 12 L19.5 7.5"/><path d="M12 12 L4.5 7.5"/><path d="M12 12 L19.5 16.5"/><path d="M12 12 L4.5 16.5"/><path d="M12 12 L12 21"/></svg></span> ابدأ الدوران';st.textContent="جرّب حظك مرة كل 24 ساعة!";res.textContent="";res.className="wheel-result";}
+}
+let spinning=false;
+function spinWheel(){
+  if(spinning)return;
+  if(Date.now()-(DATA.lastWheel||0)<WHEEL_COOLDOWN){playLose();return toast("⏳ عد لاحقًا","warn");}
+  spinning=true;
+  const btn=document.getElementById("wheelBtn"),wheel=document.getElementById("wheelEl"),res=document.getElementById("wheelResult");
+  btn.disabled=true;res.textContent="";res.className="wheel-result";
+  startSpinSound(4000);
+  const prize=pickWheelPrize(),idx=CONFIG.WHEEL_PRIZES.indexOf(prize),seg=360/CONFIG.WHEEL_PRIZES.length;
+  const target=360*5+(360-idx*seg-seg/2);
+  wheel.style.transition="transform 4s cubic-bezier(.17,.67,.16,1)";
+  wheel.style.transform="rotate("+target+"deg)";
+  setTimeout(function(){
+    stopSpinSound();
+    DATA.balance+=prize.amount;DATA.lastWheel=Date.now();save(DATA);render();
+    res.textContent="";res.className="wheel-result win";
+    playWin();toast("🎉 +"+COIN+" "+prize.amount,"ok");
+    spinning=false;
+    setTimeout(function(){
+      wheel.style.transition="none";
+      wheel.style.transform="rotate(0deg)";
+      setTimeout(function(){wheel.style.transition="transform 4s cubic-bezier(.17,.67,.16,1)";},50);
+    },1000);
+  },4100);
+}
+function renderOrders(){
+  const el=document.getElementById("ordersList");
+  if(!el)return;
+  const list=DATA.orders.filter(function(o){return o.type==="withdraw";});
+  if(!list.length){el.innerHTML='<p class="muted">لا توجد طلبات سحب بعد.</p>';return;}
+  el.innerHTML=list.map(function(o){
+    return '<div class="item">'+
+      '<div class="row"><span>الدولار:</span><b>'+(o.usd||"—")+'$</b></div>'+
+      '<div class="row"><span>المحفظة:</span><b style="font-size:11px;word-break:break-all">'+(o.wallet||"—")+'</b></div>'+
+      '<div class="row"><span>الحالة:</span><span class="badge '+(o.status==="pending"?"warn":"ok")+'">'+(o.status==="pending"?"قيد المراجعة":"مكتمل")+'</span></div>'+
+      '<div class="row"><span>التاريخ:</span><b style="font-size:12px">'+o.date+'</b></div>'+
+    '</div>';
+  }).join("");
+}
+applyUserInfo();
+render();
+</script>
+</body>
+</html>
